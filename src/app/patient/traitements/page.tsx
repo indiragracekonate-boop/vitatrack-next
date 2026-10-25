@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { getUser, getNotifCount } from '@/lib/actions'
 import Layout from '@/components/Layout'
 import { dateFr } from '@/lib/utils'
@@ -6,7 +6,7 @@ import { dateFr } from '@/lib/utils'
 export default async function PatientTraitements() {
   const user = await getUser()
   const notifCount = await getNotifCount(user.id)
-  const supabase = await createClient()
+  const supabase = await createAdminClient()
 
   const { data: patient } = await supabase.from('patients').select('id').eq('user_id', user.id).single()
 

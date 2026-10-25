@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { getUser, getNotifCount } from '@/lib/actions'
 import Layout from '@/components/Layout'
 import Tag from '@/components/Tag'
@@ -8,7 +8,7 @@ import Link from 'next/link'
 export default async function PatientDashboard() {
   const user = await getUser()
   const notifCount = await getNotifCount(user.id)
-  const supabase = await createClient()
+  const supabase = await createAdminClient()
 
   const { data: patientRow } = await supabase
     .from('patients')

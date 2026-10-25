@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/server'
 import { getUser, getNotifCount } from '@/lib/actions'
 import Layout from '@/components/Layout'
 import SignalementsClient from './client'
@@ -6,7 +6,7 @@ import SignalementsClient from './client'
 export default async function MedecinSignalements() {
   const user = await getUser()
   const notifCount = await getNotifCount(user.id)
-  const supabase = await createClient()
+  const supabase = await createAdminClient()
 
   const { data: signalements } = await supabase
     .from('signalements')

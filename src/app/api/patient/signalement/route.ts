@@ -21,7 +21,7 @@ export async function POST(req: Request) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
   if (medecinId) {
-    const { data: medUser } = await supabase.from('medecins').select('user_id').eq('id', medecinId).single()
+    const { data: medUser } = await supabase.from('medecins').select('user_id').eq('user_id', medecinId).single()
     if (medUser?.user_id) {
       await notifier(medUser.user_id, `Nouveau signalement : ${titre}`, '/medecin/signalements')
     }
