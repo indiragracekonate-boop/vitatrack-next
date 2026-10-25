@@ -1,9 +1,9 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-export default function ActivatePage() {
+function ActivateForm() {
   const params = useSearchParams()
   const router = useRouter()
   const token = params.get('token')
@@ -84,5 +84,13 @@ export default function ActivatePage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function ActivatePage() {
+  return (
+    <Suspense fallback={<div className="page-connexion"><div className="connexion"><div className="carte"><p>Chargement…</p></div></div></div>}>
+      <ActivateForm />
+    </Suspense>
   )
 }
