@@ -99,7 +99,7 @@ export default function Layout({ user, title, notifications = 0, children, flash
               type="button"
               onClick={handleInstall}
               title="Installer l'application sur votre bureau"
-              style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}
+              style={{ background: '#fff', color: '#0d57a6', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }}
             >
               ⬇ Installer
             </button>
