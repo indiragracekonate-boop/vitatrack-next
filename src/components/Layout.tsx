@@ -1,8 +1,14 @@
 'use client'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { User } from '@/lib/types'
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt(): Promise<void>
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
+}
 
 const menus: Record<string, Array<[string, string]>> = {
   admin: [
@@ -48,6 +54,30 @@ export default function Layout({ user, title, notifications = 0, children, flash
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null)
+  const [installed, setInstalled] = useState(false)
+
+  useEffect(() => {
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {})
+    const handler = (e: Event) => {
+      e.preventDefault()
+      deferredPrompt.current = e as BeforeInstallPromptEvent
+    }
+    window.addEventListener('beforeinstallprompt', handler)
+    window.addEventListener('appinstalled', () => setInstalled(true))
+    setInstalled(window.matchMedia('(display-mode: standalone)').matches)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [])
+
+  async function handleInstall() {
+    if (deferredPrompt.current) {
+      await deferredPrompt.current.prompt()
+      const { outcome } = await deferredPrompt.current.userChoice
+      if (outcome === 'accepted') { setInstalled(true); deferredPrompt.current = null }
+    } else {
+      alert("Pour installer l'application :\n• Chrome/Edge : menu ⋮ → « Installer VitaTrack »\n• Safari iOS : partager → « Sur l'écran d'accueil »")
+    }
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -64,6 +94,16 @@ export default function Layout({ user, title, notifications = 0, children, flash
           <img src="/assets/images/logo.png" alt="VitaTrack" />
         </a>
         <div className="haut-droite">
+          {!installed && (
+            <button
+              type="button"
+              onClick={handleInstall}
+              title="Installer l'application sur votre bureau"
+              style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.4)', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontSize: 13, display: 'flex', alignItems: 'center', gap: 6 }}
+            >
+              ⬇ Installer
+            </button>
+          )}
           <Link className="cloche" href="/notifications" aria-label={`Notifications : ${notifications} non lues`}>
             🔔{notifications > 0 && <span className="badge">{notifications}</span>}
           </Link>
