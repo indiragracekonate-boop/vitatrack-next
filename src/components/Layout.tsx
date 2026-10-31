@@ -4,35 +4,43 @@ import { usePathname, useRouter } from 'next/navigation'
 import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { User } from '@/lib/types'
+import {
+  LayoutDashboard, Users, Calendar, AlertTriangle, ClipboardList,
+  UserPlus, Bell, LogOut, Download, BookOpen, FileText, Stethoscope,
+  ShieldCheck, Activity, Clipboard, ClipboardCheck, Heart, Pill,
+  ChevronRight, Menu, X,
+} from 'lucide-react'
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>
 }
 
-const menus: Record<string, Array<[string, string]>> = {
+type MenuItem = { href: string; label: string; icon: React.ReactNode; match?: 'exact' | 'prefix' }
+
+const menus: Record<string, MenuItem[]> = {
   admin: [
-    ['/admin/dashboard', 'Tableau de bord'],
-    ['/admin/utilisateurs', 'Comptes utilisateurs'],
-    ['/admin/patients', 'Patients et affectations'],
-    ['/admin/journal', 'Journal des actions'],
+    { href: '/admin/dashboard',    label: 'Tableau de bord',       icon: <LayoutDashboard size={18} /> },
+    { href: '/admin/utilisateurs', label: 'Comptes utilisateurs',   icon: <Users size={18} /> },
+    { href: '/admin/patients',     label: 'Patients & affectations',icon: <Stethoscope size={18} /> },
+    { href: '/admin/journal',      label: 'Journal des actions',    icon: <BookOpen size={18} /> },
   ],
   medecin: [
-    ['/medecin/dashboard', 'Tableau de bord'],
-    ['/medecin/patients', 'Mes patients'],
-    ['/medecin/rendezvous', 'Rendez-vous'],
-    ['/medecin/signalements', 'Signalements'],
-    ['/medecin/suivis', 'Suivis en retard'],
-    ['/medecin/questionnaires', 'Questionnaires'],
-    ['/medecin/nouveau_patient', '+ Nouveau patient'],
+    { href: '/medecin/dashboard',      label: 'Tableau de bord',     icon: <LayoutDashboard size={18} /> },
+    { href: '/medecin/patients',       label: 'Mes patients',        icon: <Users size={18} /> },
+    { href: '/medecin/rendezvous',     label: 'Rendez-vous',         icon: <Calendar size={18} /> },
+    { href: '/medecin/signalements',   label: 'Signalements',        icon: <AlertTriangle size={18} /> },
+    { href: '/medecin/suivis',         label: 'Suivis en retard',    icon: <ClipboardCheck size={18} /> },
+    { href: '/medecin/questionnaires', label: 'Questionnaires',      icon: <ClipboardList size={18} /> },
+    { href: '/medecin/nouveau_patient',label: 'Nouveau patient',     icon: <UserPlus size={18} /> },
   ],
   patient: [
-    ['/patient/dashboard', 'Accueil'],
-    ['/patient/passeport', 'Mon passeport de sortie'],
-    ['/patient/traitements', 'Mes traitements'],
-    ['/patient/rendezvous', 'Mes rendez-vous'],
-    ['/patient/signalement', 'Signaler un symptôme'],
-    ['/patient/questionnaires', 'Mes questionnaires'],
+    { href: '/patient/dashboard',      label: 'Mon espace santé',   icon: <Heart size={18} /> },
+    { href: '/patient/passeport',      label: 'Passeport de sortie',icon: <FileText size={18} /> },
+    { href: '/patient/traitements',    label: 'Mes traitements',    icon: <Pill size={18} /> },
+    { href: '/patient/rendezvous',     label: 'Mes rendez-vous',    icon: <Calendar size={18} /> },
+    { href: '/patient/signalement',    label: 'Signaler un symptôme',icon: <AlertTriangle size={18} /> },
+    { href: '/patient/questionnaires', label: 'Questionnaires',     icon: <ClipboardList size={18} /> },
   ],
 }
 
@@ -56,6 +64,7 @@ export default function Layout({ user, title, notifications = 0, children, flash
   const supabase = createClient()
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null)
   const [installed, setInstalled] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
     if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(() => {})
@@ -75,7 +84,7 @@ export default function Layout({ user, title, notifications = 0, children, flash
       const { outcome } = await deferredPrompt.current.userChoice
       if (outcome === 'accepted') { setInstalled(true); deferredPrompt.current = null }
     } else {
-      alert("Pour installer l'application :\n• Chrome/Edge : menu ⋮ → « Installer VitaTrack »\n• Safari iOS : partager → « Sur l'écran d'accueil »")
+      alert("Pour installer :\n• Chrome/Edge : menu ⋮ → « Installer VitaTrack »\n• Safari iOS : partager → « Sur l'écran d'accueil »")
     }
   }
 
@@ -86,48 +95,113 @@ export default function Layout({ user, title, notifications = 0, children, flash
   }
 
   const menuItems = menus[user.role] ?? []
+  const initiales = `${user.prenom?.[0] ?? ''}${user.nom?.[0] ?? ''}`.toUpperCase()
+
+  const isActive = (item: MenuItem) =>
+    item.match === 'exact'
+      ? pathname === item.href
+      : pathname === item.href || pathname.startsWith(item.href + '/')
+
+  const navContent = (
+    <div className="menu-section">
+      {menuItems.map((item) => (
+        <Link
+          key={item.href}
+          href={item.href}
+          className={isActive(item) ? 'actif' : ''}
+          onClick={() => setMobileOpen(false)}
+        >
+          {item.icon}
+          {item.label}
+          {isActive(item) && <ChevronRight size={14} style={{ marginLeft: 'auto', opacity: 0.5 }} />}
+        </Link>
+      ))}
+    </div>
+  )
 
   return (
-    <div className={`role-${user.role}`}>
+    <div className={`role-${user.role}`} style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      {/* Header */}
       <header className="haut">
-        <a className="marque" href="/">
-          <img src="/assets/images/logo.png" alt="VitaTrack" />
-        </a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            type="button"
+            className="fantome btn-icon"
+            style={{ display: 'none' }}
+            id="menu-toggle"
+            onClick={() => setMobileOpen(v => !v)}
+            aria-label="Menu"
+          >
+            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+          <Link className="marque" href="/" style={{ textDecoration: 'none' }}>
+            <Activity size={22} color="var(--bleu)" />
+            <span className="marque-nom">VitaTrack</span>
+          </Link>
+        </div>
+
         <div className="haut-droite">
           {!installed && (
             <button
               type="button"
+              className="fantome petit"
               onClick={handleInstall}
-              title="Installer l'application sur votre bureau"
-              style={{ background: '#fff', color: '#0d57a6', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6, boxShadow: '0 1px 4px rgba(0,0,0,0.15)' }}
+              title="Installer l'application"
             >
-              ⬇ Installer
+              <Download size={15} />
+              <span style={{ display: 'none' }} id="install-label">Installer</span>
             </button>
           )}
-          <Link className="cloche" href="/notifications" aria-label={`Notifications : ${notifications} non lues`}>
-            🔔{notifications > 0 && <span className="badge">{notifications}</span>}
+          <Link className="cloche" href="/notifications" aria-label={`${notifications} notifications non lues`}>
+            <Bell size={18} />
+            {notifications > 0 && <span className="badge">{notifications > 9 ? '9+' : notifications}</span>}
           </Link>
-          <span className="profil">
-            {user.prenom} {user.nom} · {roleLabel[user.role]}
-          </span>
-          <button className="secondaire" type="button" onClick={handleLogout} style={{ marginTop: 0 }}>
-            Déconnexion
+          <div className="profil-chip">
+            <span className="avatar">{initiales}</span>
+            <div className="profil-info">
+              <div className="profil-nom">{user.prenom} {user.nom}</div>
+              <div className="profil-role">{roleLabel[user.role]}</div>
+            </div>
+          </div>
+          <button className="btn-logout" type="button" onClick={handleLogout}>
+            <LogOut size={15} />
+            <span>Déconnexion</span>
           </button>
         </div>
       </header>
+
+      {/* Corps */}
       <div className="corps">
-        <nav className="menu" aria-label="Menu principal">
-          {menuItems.map(([href, label]) => (
-            <Link
-              key={href}
-              href={href}
-              className={pathname === href || pathname.startsWith(href + '/') ? 'actif' : ''}
-            >
-              {label}
-            </Link>
-          ))}
+        {/* Sidebar desktop */}
+        <nav className="menu" aria-label="Navigation principale">
+          {navContent}
         </nav>
-        <main className="contenu">
+
+        {/* Overlay mobile */}
+        {mobileOpen && (
+          <div
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 40 }}
+            onClick={() => setMobileOpen(false)}
+          />
+        )}
+
+        {/* Sidebar mobile slide */}
+        <nav
+          className="menu"
+          style={{
+            position: 'fixed',
+            top: 'var(--header-h)',
+            left: mobileOpen ? 0 : '-260px',
+            height: 'calc(100vh - var(--header-h))',
+            zIndex: 45,
+            transition: 'left 0.2s ease',
+          }}
+          aria-label="Navigation mobile"
+        >
+          {navContent}
+        </nav>
+
+        <main className="contenu fade-in">
           {flash && (
             <div className={`message ${flash.type}`} role="status">
               {flash.message}
@@ -137,8 +211,9 @@ export default function Layout({ user, title, notifications = 0, children, flash
           {children}
         </main>
       </div>
+
       <footer className="pied">
-        VitaTrack : prototype de démonstration avec des données fictives. Ce n&apos;est pas un service d&apos;urgence.
+        VitaTrack — application médicale. Données fictives de démonstration. Ce n&apos;est pas un service d&apos;urgence.
       </footer>
     </div>
   )

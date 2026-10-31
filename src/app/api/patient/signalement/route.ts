@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     titre,
     description,
     niveau_urgence: niveauUrgence ?? 'normal',
-    statut: 'nouveau',
+    statut: 'a_examiner',
   }).select().single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

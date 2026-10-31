@@ -4,6 +4,7 @@ import Layout from '@/components/Layout'
 import Tag from '@/components/Tag'
 import { dateFr, datetimeFr, statutSuivi, libelleStatutSuivi, libelleStatutRdv } from '@/lib/utils'
 import Link from 'next/link'
+import { Calendar, ClipboardCheck, Bell, Activity, ChevronRight } from 'lucide-react'
 
 export default async function PatientDashboard() {
   const user = await getUser()
@@ -18,9 +19,11 @@ export default async function PatientDashboard() {
 
   if (!patientRow) {
     return (
-      <Layout user={user} title="Tableau de bord" notifications={notifCount}>
-        <div className="carte">
-          <p className="muted">Votre dossier patient n&apos;est pas encore configuré. Contactez votre médecin.</p>
+      <Layout user={user} title="Mon espace santé" notifications={notifCount}>
+        <div className="carte" style={{ textAlign: 'center', padding: '40px 24px' }}>
+          <Activity size={40} style={{ margin: '0 auto 16px', display: 'block', color: 'var(--gris-clair)' }} />
+          <h2>Dossier non configuré</h2>
+          <p className="muted">Votre dossier patient n&apos;est pas encore configuré. Contactez votre médecin ou l&apos;établissement.</p>
         </div>
       </Layout>
     )
@@ -55,63 +58,134 @@ export default async function PatientDashboard() {
 
   return (
     <Layout user={user} title="Mon espace santé" notifications={notifCount}>
-      <div className="bandeau">
-        <strong>{patientRow.prenom} {patientRow.nom}</strong>, {age} ans
+      {/* Bandeau patient */}
+      <div className="bandeau" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <div className="grand">Bonjour, {patientRow.prenom} {patientRow.nom} 👋</div>
+          <div className="sub">{age} ans · Bienvenue dans votre espace santé</div>
+        </div>
+        <Link href="/patient/passeport" style={{ background: 'rgba(255,255,255,0.2)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 6 }}>
+          Mon passeport <ChevronRight size={14} />
+        </Link>
+      </div>
+
+      {/* Stats rapides */}
+      <div className="grille-3" style={{ marginBottom: 20 }}>
+        <div className="stat">
+          <div className="stat-icon bleu"><Calendar size={20} /></div>
+          <div className="stat-label">Prochains RDV</div>
+          <div className="chiffre bleu">{rdvs?.length ?? 0}</div>
+        </div>
+        <div className="stat">
+          <div className="stat-icon orange"><ClipboardCheck size={20} /></div>
+          <div className="stat-label">Suivis à venir</div>
+          <div className="chiffre orange">{suivis?.length ?? 0}</div>
+        </div>
+        <div className="stat">
+          <div className="stat-icon rouge"><Bell size={20} /></div>
+          <div className="stat-label">Notifications</div>
+          <div className="chiffre rouge">{notifCount}</div>
+        </div>
       </div>
 
       <div className="grille-2">
+        {/* RDV */}
         <div className="carte">
-          <h2>Prochains rendez-vous</h2>
+          <div className="carte-titre">
+            <h2>Prochains rendez-vous</h2>
+            <Link href="/patient/rendezvous" className="bouton secondaire petit">Voir tous</Link>
+          </div>
           {rdvs?.length ? (
             <ul className="liste-items">
               {rdvs.map(r => {
                 const m = r.users as { prenom: string; nom: string } | null
                 return (
                   <li key={r.id}>
-                    <strong>{datetimeFr(r.date_heure)}</strong>
-                    {m ? ` — Dr. ${m.prenom} ${m.nom}` : ''}<br />
-                    <span className="muted">{r.motif}</span>
-                    {' '}<Tag statut={r.statut} label={libelleStatutRdv(r.statut)} />
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                      <div>
+                        <div style={{ fontWeight: 600 }}>{datetimeFr(r.date_heure)}</div>
+                        {m ? <div className="aide">Dr. {m.prenom} {m.nom}</div> : null}
+                        {r.motif ? <div className="aide muted">{r.motif}</div> : null}
+                      </div>
+                      <Tag statut={r.statut} label={libelleStatutRdv(r.statut)} />
+                    </div>
                   </li>
                 )
               })}
             </ul>
-          ) : <p className="muted">Aucun rendez-vous à venir.</p>}
-          <Link href="/patient/rendezvous" className="btn secondaire" style={{ marginTop: 8 }}>Voir tous les RDV</Link>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '20px 0' }}>
+              <Calendar size={28} style={{ margin: '0 auto 8px', display: 'block', opacity: 0.3 }} />
+              <p className="muted">Aucun rendez-vous à venir.</p>
+            </div>
+          )}
         </div>
 
+        {/* Suivis */}
         <div className="carte">
-          <h2>Mes suivis</h2>
+          <div className="carte-titre">
+            <h2>Mes suivis planifiés</h2>
+          </div>
           {suivis?.length ? (
             <ul className="liste-items">
               {suivis.map(s => {
                 const st = statutSuivi(s.date_prevue, s.effectue_le)
                 return (
-                  <li key={s.id}>
-                    <strong>{dateFr(s.date_prevue)}</strong> — {s.type_suivi}
-                    {' '}<Tag statut={st} label={libelleStatutSuivi(st)} />
+                  <li key={s.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+                    <div>
+                      <div style={{ fontWeight: 600 }}>{dateFr(s.date_prevue)}</div>
+                      <div className="aide">{s.type_suivi}</div>
+                    </div>
+                    <Tag statut={st} label={libelleStatutSuivi(st)} />
                   </li>
                 )
               })}
             </ul>
-          ) : <p className="muted">Aucun suivi planifié.</p>}
+          ) : (
+            <div style={{ textAlign: 'center', padding: '20px 0' }}>
+              <ClipboardCheck size={28} style={{ margin: '0 auto 8px', display: 'block', opacity: 0.3 }} />
+              <p className="muted">Aucun suivi planifié.</p>
+            </div>
+          )}
         </div>
       </div>
 
+      {/* Notifications */}
       {notifications && notifications.length > 0 && (
         <div className="carte">
-          <h2>Notifications récentes</h2>
+          <div className="carte-titre">
+            <h2>Notifications non lues</h2>
+            <Link href="/notifications" className="bouton secondaire petit">Toutes</Link>
+          </div>
           <ul className="liste-items">
             {notifications.map(n => (
-              <li key={n.id}>
-                <span className="muted">{dateFr(n.created_at)}</span> — {n.message}
-                {n.lien && <> · <Link href={n.lien}>Voir</Link></>}
+              <li key={n.id} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+                <div>
+                  <span className="aide muted">{dateFr(n.created_at)}</span>
+                  <div>{n.message}</div>
+                </div>
+                {n.lien && <Link href={n.lien} className="aide" style={{ flexShrink: 0 }}>Voir →</Link>}
               </li>
             ))}
           </ul>
-          <Link href="/notifications" className="btn secondaire" style={{ marginTop: 8 }}>Toutes les notifications</Link>
         </div>
       )}
+
+      {/* Actions rapides */}
+      <div className="carte">
+        <h2>Actions rapides</h2>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <Link href="/patient/signalement" className="bouton secondaire">
+            Signaler un symptôme
+          </Link>
+          <Link href="/patient/questionnaires" className="bouton secondaire">
+            Mes questionnaires
+          </Link>
+          <Link href="/patient/traitements" className="bouton secondaire">
+            Mes traitements
+          </Link>
+        </div>
+      </div>
     </Layout>
   )
 }
