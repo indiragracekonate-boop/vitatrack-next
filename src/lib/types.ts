@@ -34,8 +34,7 @@ export interface AffectationMedecin {
   id: string
   patient_id: string
   medecin_id: string
-  date_debut: string
-  date_fin: string | null
+  date_affectation: string
   affecte_par: string | null
 }
 
@@ -54,20 +53,20 @@ export interface SortieHospitaliere {
 
 export interface Suivi {
   id: string
-  sortie_id: string
-  libelle: string
+  patient_id: string
+  medecin_id: string
+  type_suivi: string
   date_prevue: string
   effectue_le: string | null
-  effectue_par: string | null
+  notes: string | null
   created_at: string
 }
 
 export interface RendezVous {
   id: string
-  sortie_id: string
   patient_id: string
   medecin_id: string
-  date_rdv: string
+  date_heure: string
   motif: string
   consignes: string | null
   statut: 'planifie' | 'confirme_patient' | 'absence_annoncee' | 'realise' | 'absence_constatee' | 'annule'
@@ -80,12 +79,10 @@ export interface Signalement {
   id: string
   patient_id: string
   medecin_id: string | null
-  type_symptome: 'douleur' | 'mal_de_tete' | 'fievre' | 'blessure' | 'autre'
-  debut_approximatif: string | null
-  intensite: number | null
+  titre: string
   description: string
-  contact_souhaite: boolean
-  statut: 'envoye' | 'a_examiner' | 'examine' | 'suivi_en_cours' | 'cloture'
+  niveau_urgence: 'faible' | 'normal' | 'eleve' | 'critique'
+  statut: 'a_examiner' | 'en_cours' | 'examine' | 'suivi_en_cours' | 'cloture'
   created_at: string
   updated_at: string | null
 }
@@ -94,7 +91,7 @@ export interface SignalementAction {
   id: string
   signalement_id: string
   user_id: string | null
-  type_action: 'envoi' | 'prise_en_charge' | 'observation' | 'conduite' | 'examine' | 'suivi' | 'cloture'
+  action: string
   contenu: string | null
   created_at: string
 }

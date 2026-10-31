@@ -948,6 +948,8 @@ summary::-webkit-details-marker { display: none; }
 
   .menu a svg { width: 16px; height: 16px; }
 
+  #menu-toggle { display: flex !important; }
+
   .contenu { padding: 16px; }
   .grille-2, .grille-3, .grille-4, .grille-stats { grid-template-columns: 1fr; }
 
