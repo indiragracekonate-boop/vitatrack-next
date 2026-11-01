@@ -32,7 +32,9 @@ export default function AdminUtilisateursClient({
   const [email, setEmail] = useState('')
   const [telephone, setTelephone] = useState('')
   const [specialite, setSpecialite] = useState('')
+  const [password, setPassword] = useState('')
   const [activationLink, setActivationLink] = useState('')
+  const [directCreated, setDirectCreated] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -45,17 +47,20 @@ export default function AdminUtilisateursClient({
       const res = await fetch('/api/admin/utilisateurs', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role, nom, prenom, email, telephone, specialite }),
+        body: JSON.stringify({ role, nom, prenom, email, telephone, specialite, password: password || undefined }),
       })
       const json = await res.json()
       if (!res.ok) { setError(json.error ?? 'Erreur.'); return }
-      setActivationLink(json.activationUrl)
-      setNom(''); setPrenom(''); setEmail(''); setTelephone(''); setSpecialite('')
+      if (json.direct) { setDirectCreated(true); setActivationLink('') }
+      else { setActivationLink(json.activationUrl); setDirectCreated(false) }
+      setNom(''); setPrenom(''); setEmail(''); setTelephone(''); setSpecialite(''); setPassword('')
       router.refresh()
     } finally {
       setLoading(false)
     }
   }
+
+  function handleReset() { setShowForm(!showForm); setActivationLink(''); setDirectCreated(false); setError('') }
 
   async function copyLink() {
     try {
@@ -81,7 +86,7 @@ export default function AdminUtilisateursClient({
   return (
     <>
       <div style={{ marginBottom: 16 }}>
-        <button type="button" onClick={() => { setShowForm(!showForm); setActivationLink(''); setError('') }}>
+        <button type="button" onClick={handleReset}>
           {showForm ? <><X size={15} /> Annuler</> : <><UserPlus size={15} /> Créer un compte</>}
         </button>
       </div>
@@ -90,12 +95,17 @@ export default function AdminUtilisateursClient({
         <div className="carte">
           <h2>Nouveau compte utilisateur</h2>
           <p className="aide" style={{ marginBottom: 16 }}>
-            Un lien d&apos;activation sera généré. Transmettez-le à la personne concernée pour qu&apos;elle définisse son mot de passe.
+            Définissez un mot de passe initial pour que l&apos;utilisateur puisse se connecter immédiatement, ou laissez vide pour générer un lien d&apos;activation.
           </p>
           {error && <div className="message erreur">{error}</div>}
+          {directCreated && (
+            <div className="message ok">
+              <strong>✓ Compte créé et activé.</strong> L&apos;utilisateur peut se connecter immédiatement avec le mot de passe défini.
+            </div>
+          )}
           {activationLink && (
             <div className="message ok" style={{ flexDirection: 'column', gap: 8 }}>
-              <strong>✓ Compte créé avec succès.</strong>
+              <strong>✓ Compte créé.</strong>
               <span>Lien d&apos;activation (valable 7 jours) :</span>
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                 <code style={{ background: 'rgba(0,0,0,0.08)', padding: '4px 8px', borderRadius: 6, fontSize: 12, wordBreak: 'break-all', flex: 1 }}>
@@ -135,6 +145,10 @@ export default function AdminUtilisateursClient({
               <div className="form-group">
                 <label>Téléphone <span className="aide">(optionnel)</span></label>
                 <input value={telephone} onChange={e => setTelephone(e.target.value)} placeholder="06 00 00 00 00" />
+              </div>
+              <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                <label>Mot de passe initial <span className="aide">(optionnel — min. 8 caractères)</span></label>
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Laisser vide pour envoyer un lien d'activation" minLength={8} />
               </div>
             </div>
             <button type="submit" disabled={loading}>

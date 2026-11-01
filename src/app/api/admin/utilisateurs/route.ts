@@ -7,14 +7,43 @@ export async function POST(req: Request) {
   const currentUser = await getUser()
   if (currentUser.role !== 'admin') return NextResponse.json({ error: 'Accès refusé.' }, { status: 403 })
 
-  const { role, nom, prenom, email, telephone, specialite } = await req.json()
+  const { role, nom, prenom, email, telephone, specialite, password } = await req.json()
   if (!role || !nom || !prenom || !email) return NextResponse.json({ error: 'Champs requis manquants.' }, { status: 400 })
+  if (password && password.length < 8) return NextResponse.json({ error: 'Le mot de passe doit comporter au moins 8 caractères.' }, { status: 400 })
 
   const supabase = await createAdminClient()
 
   const { data: existing } = await supabase.from('users').select('id').eq('email', email).single()
   if (existing) return NextResponse.json({ error: 'Cet e-mail est déjà utilisé.' }, { status: 409 })
 
+  if (password) {
+    // Création directe avec mot de passe initial
+    const { data: authUser, error: authErr } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+    })
+    if (authErr) return NextResponse.json({ error: authErr.message }, { status: 500 })
+
+    const { data: newUser, error: uErr } = await supabase
+      .from('users')
+      .insert({ role, nom, prenom, email, telephone: telephone || null, actif: true, auth_id: authUser.user.id })
+      .select()
+      .single()
+    if (uErr) return NextResponse.json({ error: uErr.message }, { status: 500 })
+
+    if (role === 'medecin' && specialite) {
+      await supabase.from('medecins').insert({ user_id: newUser.id, specialite })
+    }
+    if (role === 'patient') {
+      await supabase.from('patients').insert({ nom, prenom, date_naissance: null, sexe: 'autre', email })
+    }
+
+    await journaliser(currentUser.id, 'create_user', 'users', newUser.id, `${prenom} ${nom} (${role})`)
+    return NextResponse.json({ ok: true, direct: true })
+  }
+
+  // Flux par lien d'activation (sans mot de passe)
   const { data: newUser, error: uErr } = await supabase
     .from('users')
     .insert({ role, nom, prenom, email, telephone: telephone || null, actif: false })
@@ -29,17 +58,11 @@ export async function POST(req: Request) {
   const token = crypto.randomBytes(32).toString('hex')
   const expireDate = new Date()
   expireDate.setDate(expireDate.getDate() + 7)
-
-  await supabase.from('invitations').insert({
-    user_id: newUser.id,
-    token,
-    expire_le: expireDate.toISOString(),
-  })
+  await supabase.from('invitations').insert({ user_id: newUser.id, token, expire_le: expireDate.toISOString() })
 
   await journaliser(currentUser.id, 'create_user', 'users', newUser.id, `${prenom} ${nom} (${role})`)
 
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? `https://${req.headers.get('host')}`
   const activationUrl = `${baseUrl}/auth/activate?token=${token}`
-
   return NextResponse.json({ ok: true, activationUrl })
 }

@@ -7,8 +7,8 @@ import { User } from '@/lib/types'
 import {
   LayoutDashboard, Users, Calendar, AlertTriangle, ClipboardList,
   UserPlus, Bell, LogOut, Download, BookOpen, FileText, Stethoscope,
-  ShieldCheck, Activity, Clipboard, ClipboardCheck, Heart, Pill,
-  ChevronRight, Menu, X,
+  Activity, ClipboardCheck, Heart, Pill,
+  ChevronRight, Menu, X, UserCog,
 } from 'lucide-react'
 
 interface BeforeInstallPromptEvent extends Event {
@@ -24,6 +24,7 @@ const menus: Record<string, MenuItem[]> = {
     { href: '/admin/utilisateurs', label: 'Comptes utilisateurs',   icon: <Users size={18} /> },
     { href: '/admin/patients',     label: 'Patients & affectations',icon: <Stethoscope size={18} /> },
     { href: '/admin/journal',      label: 'Journal des actions',    icon: <BookOpen size={18} /> },
+    { href: '/compte',             label: 'Mon compte',             icon: <UserCog size={18} />, match: 'exact' },
   ],
   medecin: [
     { href: '/medecin/dashboard',      label: 'Tableau de bord',     icon: <LayoutDashboard size={18} /> },
@@ -33,6 +34,7 @@ const menus: Record<string, MenuItem[]> = {
     { href: '/medecin/suivis',         label: 'Suivis en retard',    icon: <ClipboardCheck size={18} /> },
     { href: '/medecin/questionnaires', label: 'Questionnaires',      icon: <ClipboardList size={18} /> },
     { href: '/medecin/nouveau_patient',label: 'Nouveau patient',     icon: <UserPlus size={18} /> },
+    { href: '/compte',                 label: 'Mon compte',          icon: <UserCog size={18} />, match: 'exact' },
   ],
   patient: [
     { href: '/patient/dashboard',      label: 'Mon espace santé',   icon: <Heart size={18} /> },
@@ -41,6 +43,7 @@ const menus: Record<string, MenuItem[]> = {
     { href: '/patient/rendezvous',     label: 'Mes rendez-vous',    icon: <Calendar size={18} /> },
     { href: '/patient/signalement',    label: 'Signaler un symptôme',icon: <AlertTriangle size={18} /> },
     { href: '/patient/questionnaires', label: 'Questionnaires',     icon: <ClipboardList size={18} /> },
+    { href: '/compte',                 label: 'Mon compte',         icon: <UserCog size={18} />, match: 'exact' },
   ],
 }
 
