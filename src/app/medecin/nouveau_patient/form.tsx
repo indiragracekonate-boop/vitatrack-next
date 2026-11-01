@@ -6,7 +6,7 @@ export default function NouveauPatientForm() {
   const [nom, setNom] = useState('')
   const [prenom, setPrenom] = useState('')
   const [dateNaissance, setDateNaissance] = useState('')
-  const [sexe, setSexe] = useState('autre')
+  const [sexe, setSexe] = useState('M')
   const [telephone, setTelephone] = useState('')
   const [email, setEmail] = useState('')
   const [adresse, setAdresse] = useState('')
@@ -84,9 +84,8 @@ export default function NouveauPatientForm() {
           <div className="form-group">
             <label>Sexe *</label>
             <select value={sexe} onChange={e => setSexe(e.target.value)}>
-              <option value="masculin">Masculin</option>
-              <option value="feminin">Féminin</option>
-              <option value="autre">Autre</option>
+              <option value="M">Masculin</option>
+              <option value="F">Féminin</option>
             </select>
           </div>
           <div className="form-group">
