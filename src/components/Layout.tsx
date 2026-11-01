@@ -64,6 +64,7 @@ export default function Layout({ user, title, notifications = 0, children, flash
   const supabase = createClient()
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null)
   const [installed, setInstalled] = useState(false)
+  const [showBanner, setShowBanner] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
@@ -71,9 +72,10 @@ export default function Layout({ user, title, notifications = 0, children, flash
     const handler = (e: Event) => {
       e.preventDefault()
       deferredPrompt.current = e as BeforeInstallPromptEvent
+      setShowBanner(true)
     }
     window.addEventListener('beforeinstallprompt', handler)
-    window.addEventListener('appinstalled', () => setInstalled(true))
+    window.addEventListener('appinstalled', () => { setInstalled(true); setShowBanner(false) })
     setInstalled(window.matchMedia('(display-mode: standalone)').matches)
     return () => window.removeEventListener('beforeinstallprompt', handler)
   }, [])
@@ -82,9 +84,7 @@ export default function Layout({ user, title, notifications = 0, children, flash
     if (deferredPrompt.current) {
       await deferredPrompt.current.prompt()
       const { outcome } = await deferredPrompt.current.userChoice
-      if (outcome === 'accepted') { setInstalled(true); deferredPrompt.current = null }
-    } else {
-      alert("Pour installer :\n• Chrome/Edge : menu ⋮ → « Installer VitaTrack »\n• Safari iOS : partager → « Sur l'écran d'accueil »")
+      if (outcome === 'accepted') { setInstalled(true); deferredPrompt.current = null; setShowBanner(false) }
     }
   }
 
@@ -215,6 +215,40 @@ export default function Layout({ user, title, notifications = 0, children, flash
       <footer className="pied">
         VitaTrack — application médicale. Données fictives de démonstration. Ce n&apos;est pas un service d&apos;urgence.
       </footer>
+
+      {showBanner && !installed && (
+        <div style={{
+          position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 9999,
+          background: 'var(--bleu, #0d57a6)', color: '#fff',
+          padding: '14px 20px', display: 'flex', alignItems: 'center', gap: 12,
+          boxShadow: '0 -2px 12px rgba(0,0,0,0.2)',
+        }}>
+          <Activity size={22} style={{ flexShrink: 0 }} />
+          <div style={{ flex: 1, fontSize: 14 }}>
+            <strong>Installer VitaTrack</strong>
+            <div style={{ opacity: 0.85, fontSize: 12 }}>Accédez rapidement à l&apos;application depuis votre écran d&apos;accueil</div>
+          </div>
+          <button
+            type="button"
+            onClick={handleInstall}
+            style={{
+              background: '#fff', color: 'var(--bleu, #0d57a6)',
+              border: 'none', borderRadius: 8, padding: '8px 18px',
+              fontWeight: 600, cursor: 'pointer', fontSize: 14, flexShrink: 0,
+            }}
+          >
+            Installer
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowBanner(false)}
+            style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: 4, flexShrink: 0 }}
+            aria-label="Fermer"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      )}
     </div>
   )
 }

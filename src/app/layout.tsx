@@ -6,6 +6,14 @@ export const metadata: Metadata = {
   title: 'VitaTrack',
   description: 'Suivi des patients après hospitalisation',
   manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/assets/images/icon-192.png', sizes: '192x192', type: 'image/png' },
+      { url: '/assets/images/icon-512.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: '/assets/images/icon-192.png',
+    shortcut: '/assets/images/icon-192.png',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
